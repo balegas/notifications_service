@@ -1,0 +1,15 @@
+{application, antidote_notifications,
+ [{description, "Antidote Notifications Service"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {antidote_notifications_app, []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
