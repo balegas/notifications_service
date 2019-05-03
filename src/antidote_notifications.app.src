@@ -5,7 +5,12 @@
   {mod, {antidote_notifications_app, []}},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    %%lager,
+    crypto,
+    cowboy,
+    compiler,
+    syntax_tools
    ]},
   {env,[]},
   {modules, []},
