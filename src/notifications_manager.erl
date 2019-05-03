@@ -1,21 +1,22 @@
 -module(notifications_manager).
 -behaviour(gen_server).
+-include_lib("kernel/include/logger.hrl").
 
+%% API
 -export([start_link/0, register_client/1, push_notification/1]).
+%% Server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3]).
 
--include_lib("kernel/include/logger.hrl").
-
 -record(notification, {source, destination, payload, meta}).
--record(state, {subscriptions, supervisor}).
+-record(state, {subscriptions}).
 
 %%====================================================================
 %% API
 %%====================================================================
 
 start_link() ->
-  gen_server:start_link(?MODULE, [], []).
+  gen_server:start_link(notifications_manager, [], []).
 
 register_client(_) -> ok.
 
@@ -25,17 +26,17 @@ push_notification(_) -> ok.
 %% Callbacks
 %%====================================================================
 
-init(Sup) ->
+init([]) ->
   ?LOG_INFO("Notifications manager init"),
-  process_flag(trap_exit, true),
-  {ok, #state{supervisor = Sup, subscriptions = #{}}}.
+  register(notifications_manager, self()),
+  {ok, #state{subscriptions = #{}}}.
 
 handle_call({push, _Notification = #notification{}}, _From, State) ->
   {reply, <<"Binary data">>, State};
 
-handle_call({new_connection}, From, State) ->
-  {ok, NewState} = register_client(From, State),
-  {reply, {ok, registered}, NewState};
+handle_call(new_connection, From, State) ->
+  {ok, Pid, NewState} = register_client(From, State),
+  {reply, {ok, registered, Pid}, NewState};
 
 handle_call(terminate, _From, State) ->
   {stop, normal, ok, State}.
@@ -63,12 +64,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 
 register_client({Pid, _Ref}, State = #state{subscriptions = Sub}) ->
-  link(Pid),
-  {ok, State#state{subscriptions = Sub#{Pid => []}}}.
+  {ok, Worker} = supervisor:start_child(workers_sup, [Pid]),
+  {ok, Worker, State#state{subscriptions = Sub#{Pid => []}}}.
 
-unregister_client({Pid, _Ref}, Unlink, State = #state{subscriptions = Sub}) ->
-  case Unlink of
-    true -> unlink(Pid);
-    _ -> ok
-  end,
-  {ok, State#state{subscriptions = maps:remove(Pid, Sub)}}.
+%%unregister_client({Pid, _Ref}, State = #state{subscriptions = Sub}) ->
+%%  unlink(Pid),
+%%  {ok, State#state{subscriptions = maps:remove(Pid, Sub)}}.

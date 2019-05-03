@@ -29,18 +29,28 @@ start_link() ->
 
 init([]) ->
   Manager = #{
-    id => notifications_manager,
+    id => notifications_manager_a,
     start => {notifications_manager, start_link, []},
     restart => permanent,
     shutdown => 5000,
     type => worker,
     modules => [notifications_manager]},
 
-  {ok, {#{strategy => one_for_one, intensity => 5, period => 10}, [Manager]}}.
+  WorkerSup = #{
+    id => workers_sup,
+    start => {workers_sup, start_link, [{worker, start_link, []}]},
+    restart => permanent,
+    shutdown => 5000,
+    type => supervisor,
+    modules => [workers_sup]},
+
+  {ok, {#{strategy => one_for_one, intensity => 5, period => 10}, [Manager, WorkerSup]}}.
 
 stop() ->
-  supervisor:terminate_child(?MODULE, notifications_manager),
-  supervisor:delete_child(?MODULE, notifications_manager).
+  supervisor:terminate_child(?SERVER, notifications_manager),
+  supervisor:delete_child(?SERVER, notifications_manager),
+  supervisor:terminate_child(?SERVER, workers_sup),
+  supervisor:delete_child(?SERVER, workers_sup).
 
 
 %%====================================================================
