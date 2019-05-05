@@ -24,7 +24,7 @@ start_link(Pid) ->
   ?LOG_INFO("Worker start"),
   gen_server:start_link(worker, [Pid], []).
 
-terminate(_,_) ->
+terminate(_, _) ->
   ?LOG_INFO("Worker terminate"),
   ok.
 

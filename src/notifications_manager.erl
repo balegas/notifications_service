@@ -3,7 +3,7 @@
 -include_lib("kernel/include/logger.hrl").
 
 %% API
--export([start_link/0, add_client/2, delete_client/2, push_notification/1]).
+-export([start_link/0, stop/0, add_client/2, delete_client/2, push_notification/1]).
 %% Server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3]).
@@ -17,6 +17,9 @@
 
 start_link() ->
   gen_server:start_link(?MODULE, [], []).
+
+stop() ->
+  gen_server:call(?MODULE, terminate).
 
 add_client(Pid, Subscriptions) -> gen_server:call(?MODULE, {new_connection, Pid, Subscriptions}).
 

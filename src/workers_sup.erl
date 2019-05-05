@@ -20,7 +20,7 @@
 %% API
 %%====================================================================
 
-start_link(MFA = {_,_,_}) ->
+start_link(MFA = {_, _, _}) ->
   supervisor:start_link({local, workers_sup}, ?MODULE, MFA).
 
 terminate(_Reason, _State) ->
