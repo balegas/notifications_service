@@ -3,7 +3,7 @@
 -include_lib("kernel/include/logger.hrl").
 
 %% API
--export([start_link/0, register_client/1, push_notification/1]).
+-export([start_link/0, add_client/2, delete_client/2, push_notification/1]).
 %% Server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3]).
@@ -16,9 +16,11 @@
 %%====================================================================
 
 start_link() ->
-  gen_server:start_link(notifications_manager, [], []).
+  gen_server:start_link(?MODULE, [], []).
 
-register_client(_) -> ok.
+add_client(Pid, Subscriptions) -> gen_server:call(?MODULE, {new_connection, Pid, Subscriptions}).
+
+delete_client(Pid, Reason) -> gen_server:call(?MODULE, {terminate_connection, Pid, Reason}).
 
 push_notification(_) -> ok.
 
@@ -34,9 +36,9 @@ init([]) ->
 handle_call({push, _Notification = #notification{}}, _From, State) ->
   {reply, <<"Binary data">>, State};
 
-handle_call(new_connection, From, State) ->
-  {ok, Pid, NewState} = register_client(From, State),
-  {reply, {ok, registered, Pid}, NewState};
+handle_call({new_connection, Pid, Subscriptions}, _From, State) ->
+  {ok, Pid, NewState} = add_client(Pid, Subscriptions, State),
+  {reply, {ok, Pid}, NewState};
 
 handle_call(terminate, _From, State) ->
   {stop, normal, ok, State}.
@@ -63,10 +65,10 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal functions
 %%====================================================================
 
-register_client({Pid, _Ref}, State = #state{subscriptions = Sub}) ->
-  {ok, Worker} = supervisor:start_child(workers_sup, [Pid]),
-  {ok, Worker, State#state{subscriptions = Sub#{Pid => []}}}.
+add_client(Pid, Subscriptions, State = #state{subscriptions = Sub}) ->
+  Worker = supervisor:start_child(worker_sup, [Pid]),
+  {ok, Worker, State#state{subscriptions = Sub#{Worker => Subscriptions}}}.
 
-%%unregister_client({Pid, _Ref}, State = #state{subscriptions = Sub}) ->
+%delete_client_internal({_Pid, _Ref}, _State) -> ok.
 %%  unlink(Pid),
 %%  {ok, State#state{subscriptions = maps:remove(Pid, Sub)}}.

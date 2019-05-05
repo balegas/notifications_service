@@ -30,7 +30,7 @@ terminate(_, _, _) ->
 websocket_init(State) ->
   ?LOG_INFO("Websocket connection init. Current State ~p",[State]),
   erlang:start_timer(1000, self(), <<"Hello!">>),
-  {ok, registered, Pid} = gen_server:call(notifications_manager, new_connection),
+  {ok, Pid} = gen_server:call(notifications_manager, new_connection),
   ?LOG_INFO("Websocket worker pid ~p", [Pid]),
   {ok, #state{worker = Pid}}.
 
