@@ -6,13 +6,13 @@
 %%% @end
 %%% Created : 03. May 2019 17:40
 %%%-------------------------------------------------------------------
--module(workers_sup).
+-module(workers_mgr).
 
 -behaviour(supervisor).
 -include_lib("kernel/include/logger.hrl").
 
 %% API
--export([start_link/1, terminate/2]).
+-export([start_link/1, terminate/2, spawn_worker/1]).
 %% Supervisor callbacks
 -export([init/1]).
 
@@ -21,7 +21,7 @@
 %%====================================================================
 
 start_link(MFA = {_, _, _}) ->
-  supervisor:start_link({local, workers_sup}, ?MODULE, MFA).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, MFA).
 
 terminate(_Reason, _State) ->
   ?LOG_INFO("Worker supervisor terminate"),
@@ -40,4 +40,5 @@ init({Module, Function, Args}) ->
   }
   }.
 
-
+spawn_worker(Connection) ->
+  supervisor:start_child(?MODULE, [Connection]).

@@ -3,13 +3,13 @@
 -include_lib("kernel/include/logger.hrl").
 
 %% API
--export([start_link/0, stop/0, add_client/2, delete_client/2, push_notification/1]).
+-export([start_link/0, stop/0, add_client/2, delete_client/1, push_notification/1]).
 %% Server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3]).
 
 -record(notification, {source, destination, payload, meta}).
--record(state, {subscriptions}).
+-record(state, {sub}).
 
 %%====================================================================
 %% API
@@ -21,9 +21,17 @@ start_link() ->
 stop() ->
   gen_server:call(?MODULE, terminate).
 
-add_client(Pid, Subscriptions) -> gen_server:call(?MODULE, {new_connection, Pid, Subscriptions}).
+%% Subscriptions is a list of strings
+add_client(Pid, Keys = [_ | _]) ->
+  KeysF = lists:filter(
+    fun(E) -> io_lib:char_list(E) end, Keys
+  ),
+  gen_server:call(?MODULE, {new_connection, Pid, KeysF});
 
-delete_client(Pid, Reason) -> gen_server:call(?MODULE, {terminate_connection, Pid, Reason}).
+add_client(_, _) -> {error, "Invalid input"}.
+
+
+delete_client(Pid) -> gen_server:call(?MODULE, {terminate_connection, Pid}).
 
 push_notification(_) -> ok.
 
@@ -34,14 +42,18 @@ push_notification(_) -> ok.
 init([]) ->
   ?LOG_INFO("Notifications manager init"),
   register(notifications_manager, self()),
-  {ok, #state{subscriptions = #{}}}.
+  {ok, #state{sub = #{}}}.
 
 handle_call({push, _Notification = #notification{}}, _From, State) ->
   {reply, <<"Binary data">>, State};
 
 handle_call({new_connection, Pid, Subscriptions}, _From, State) ->
-  {ok, Pid, NewState} = add_client(Pid, Subscriptions, State),
-  {reply, {ok, Pid}, NewState};
+  {ok, Worker, NewState} = add_client(Pid, Subscriptions, State),
+  {reply, {ok, Worker}, NewState};
+
+handle_call({terminate_connection, Pid}, _From, State) ->
+  {ok, NewState} = delete_client(Pid, State),
+  {reply, ok, NewState};
 
 handle_call(terminate, _From, State) ->
   {stop, normal, ok, State}.
@@ -68,10 +80,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal functions
 %%====================================================================
 
-add_client(Pid, Subscriptions, State = #state{subscriptions = Sub}) ->
-  Worker = supervisor:start_child(worker_sup, [Pid]),
-  {ok, Worker, State#state{subscriptions = Sub#{Worker => Subscriptions}}}.
+add_client(Connection, Keys, State = #state{sub = Sub}) ->
+  {ok, Worker} = workers_mgr:spawn_worker(Connection),
+  KeysSet = lists:foldl(
+    fun(E, Acc) -> sets:add_element(E, Acc) end, sets:new(), Keys),
+  {ok, Worker, State#state{sub = Sub#{Worker => KeysSet}}}.
 
-%delete_client_internal({_Pid, _Ref}, _State) -> ok.
-%%  unlink(Pid),
-%%  {ok, State#state{subscriptions = maps:remove(Pid, Sub)}}.
+delete_client(Worker, #state{sub = Sub} = State) ->
+  ok = worker:terminate(Worker),
+  {ok, State#state{sub = maps:remove(Worker, Sub)}}.

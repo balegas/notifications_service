@@ -14,7 +14,7 @@
 -include_lib("kernel/include/logger.hrl").
 
 %% API
--export([start_link/1, terminate/2]).
+-export([start_link/1, terminate/1]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2]).
 
@@ -24,9 +24,8 @@ start_link(Pid) ->
   ?LOG_INFO("Worker start"),
   gen_server:start_link(worker, [Pid], []).
 
-terminate(_, _) ->
-  ?LOG_INFO("Worker terminate"),
-  ok.
+terminate(Worker) ->
+  gen_server:call(Worker, terminate).
 
 init([Pid]) ->
   link(Pid),

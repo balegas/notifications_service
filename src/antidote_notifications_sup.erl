@@ -13,14 +13,13 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--define(SERVER, ?MODULE).
 
 %%====================================================================
 %% API
 %%====================================================================
 
 start_link() ->
-  supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 
 %%====================================================================
@@ -29,7 +28,7 @@ start_link() ->
 
 init([]) ->
   Manager = #{
-    id => notifications_manager_a,
+    id => notifications_manager_proc,
     start => {notifications_manager, start_link, []},
     restart => permanent,
     shutdown => 5000,
@@ -37,20 +36,25 @@ init([]) ->
     modules => [notifications_manager]},
 
   WorkerSup = #{
-    id => workers_sup,
-    start => {workers_sup, start_link, [{worker, start_link, []}]},
+    id => workers_sup_proc,
+    start => {workers_mgr, start_link, [{worker, start_link, []}]},
     restart => permanent,
     shutdown => 5000,
     type => supervisor,
-    modules => [workers_sup]},
+    modules => [workers_mgr]},
 
   {ok, {#{strategy => one_for_one, intensity => 5, period => 10}, [Manager, WorkerSup]}}.
 
 stop() ->
-  supervisor:terminate_child(?SERVER, notifications_manager),
-  supervisor:delete_child(?SERVER, notifications_manager),
-  supervisor:terminate_child(?SERVER, workers_sup),
-  supervisor:delete_child(?SERVER, workers_sup).
+  supervisor:terminate_child(?MODULE, notifications_manager_proc),
+  supervisor:delete_child(?MODULE, notifications_manager_proc),
+  supervisor:terminate_child(?MODULE, workers_sup_proc),
+  supervisor:delete_child(?MODULE, workers_sup_proc),
+  case whereis(antidote_notifications_sup) of
+    P when is_pid(P) ->
+      exit(P, kill);
+    _ -> ok
+  end.
 
 
 %%====================================================================
