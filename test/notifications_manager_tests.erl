@@ -1,11 +1,9 @@
 -module(notifications_manager_tests).
-
 -include_lib("eunit/include/eunit.hrl").
+-include_lib("../include/records.hrl").
 
 %% These tests start the necessary processes for the gen_server to work.
 %% Alternatively should mock dependencies.
-%% TODO: Create connection handler for tests to replace self()
-
 
 -define(NOTIF_MGR, notifications_manager).
 -define(WORKER_MGR, workers_mgr).
@@ -42,12 +40,12 @@ is_init(Pids) ->
 
 register_connection_success(_Pid) ->
   {ok, Worker} = notifications_manager:add_client(spawn(fun() -> timer:sleep(1000000) end), ["fakeKey"]),
-  {state, Map} = sys:get_state(notifications_manager),
-  MySubs = maps:get(Worker, Map),
+  #mgrState{sub = Sub} = sys:get_state(notifications_manager),
+  MySubs = maps:get(Worker, Sub),
   [?_assert(sets:is_element("fakeKey", MySubs))].
 
 delete_connection_success(_Pid) ->
   {ok, Worker} = notifications_manager:add_client(spawn(fun() -> timer:sleep(1000000) end), ["fakeKey"]),
   ok = notifications_manager:delete_client(Worker),
-  {state, Map} = sys:get_state(notifications_manager),
-  [?_assertEqual(error, maps:find(Worker, Map))].
+  #mgrState{sub = Sub} = sys:get_state(notifications_manager),
+  [?_assertEqual(error, maps:find(Worker, Sub))].

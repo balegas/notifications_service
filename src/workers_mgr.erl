@@ -32,7 +32,7 @@ init({Module, Function, Args}) ->
     [#{
       id => pusher_worker,
       start => {Module, Function, Args},
-      restart => permanent,
+      restart => temporary,
       shutdown => 5000,
       type => worker,
       modules => [Module]
