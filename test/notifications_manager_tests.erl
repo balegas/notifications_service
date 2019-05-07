@@ -24,18 +24,17 @@ init_test_() ->
   }.
 
 start() ->
-  {ok, Pid} = antidote_notifications_sup:start_link(),
-  Procs = supervisor:which_children(Pid),
-  lists:foldl(fun({Id, ChildPid, _, _}, Acc) -> Acc#{Id => ChildPid} end, #{}, Procs).
+  test_utils:start_application(),
+  #{notifications_manager => whereis(notifications_manager), workers_mgr => whereis(workers_mgr)}.
 
 stop(_Pids) -> ok.
 
 is_init(Pids) ->
   [
-    ?_assert(is_process_alive(maps:get(notifications_manager_proc, Pids))),
-    ?_assert(is_process_alive(maps:get(workers_sup_proc, Pids))),
-    ?_assertEqual(maps:get(notifications_manager_proc, Pids), whereis(?NOTIF_MGR)),
-    ?_assertEqual(maps:get(workers_sup_proc, Pids), whereis(?WORKER_MGR))
+    ?_assert(is_process_alive(maps:get(notifications_manager, Pids))),
+    ?_assert(is_process_alive(maps:get(workers_mgr, Pids))),
+    ?_assertEqual(maps:get(notifications_manager, Pids), whereis(?NOTIF_MGR)),
+    ?_assertEqual(maps:get(workers_mgr, Pids), whereis(?WORKER_MGR))
   ].
 
 register_connection_success(_Pid) ->

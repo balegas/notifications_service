@@ -36,7 +36,7 @@ init([]) ->
     modules => [notifications_manager]},
 
   WorkerSup = #{
-    id => workers_sup_proc,
+    id => workers_mgr_proc,
     start => {workers_mgr, start_link, [{worker, start_link, []}]},
     restart => permanent,
     shutdown => 5000,

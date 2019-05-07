@@ -44,8 +44,8 @@ start() ->
 start_short() ->
   start_(1000).
 
-start_(Sleep) ->
-  {ok, Pid} = worker:start_link(spawn(fun() -> timer:sleep(Sleep), exit(normal) end)),
+start_(Timeout) ->
+  {ok, Pid} = worker:start_link(test_utils:spawn_connection(timeout, Timeout)),
   Pid.
 
 stop(Pid) -> worker:terminate(Pid).
