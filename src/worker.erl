@@ -4,7 +4,7 @@
 -include_lib("../include/records.hrl").
 
 %% API
--export([start_link/1, terminate/1, deliver_notification/2, subscribe/2, subscribe/3]).
+-export([start_link/1, terminate/1, deliver_notification/3, subscribe/2, subscribe/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2]).
 
 start_link(Connection) ->
@@ -14,8 +14,8 @@ start_link(Connection) ->
 terminate(Worker) ->
   gen_server:call(Worker, terminate).
 
-deliver_notification(Ntf, Worker) ->
-  gen_server:cast(Worker, Ntf).
+deliver_notification(Payload, Meta, Worker) ->
+  gen_server:cast(Worker, #notification{source = self(), payload = Payload, meta = Meta}).
 
 subscribe(Subscription, Worker) ->
   subscribe(Subscription, fail, Worker).
@@ -49,6 +49,11 @@ handle_call(terminate, _From, State) ->
 
 handle_call(_, _From, State) ->
   {reply, unknown_msg, State}.
+
+%%TODO: Filtering
+handle_cast(#notification{} = Notification, #workerState{con = Con} = State) ->
+  Con ! {deliver, Notification},
+  {noreply, State};
 
 handle_cast(Msg, State) ->
   ?LOG_INFO("Unexpected message: ~p ~p", [Msg, State]),

@@ -21,4 +21,4 @@ to_tuple(Msg) ->
   jiffy:decode(Msg).
 
 to_binary(Tuple) ->
-  jiffy:decode(Tuple).
+  jiffy:encode(Tuple).
