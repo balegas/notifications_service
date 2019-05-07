@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 03. May 2019 17:40
 %%%-------------------------------------------------------------------
--module(workers_mgr).
+-module(workers_manager).
 
 -behaviour(supervisor).
 -include_lib("kernel/include/logger.hrl").
@@ -24,7 +24,7 @@ start_link(MFA = {_, _, _}) ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, MFA).
 
 terminate(_Reason, _State) ->
-  ?LOG_INFO("Worker supervisor terminate"),
+  ?LOG_INFO("Worker manager terminate"),
   ok.
 
 init({Module, Function, Args}) ->

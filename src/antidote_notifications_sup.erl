@@ -27,7 +27,7 @@ start_link() ->
 %%====================================================================
 
 init([]) ->
-  Manager = #{
+  NotificationsManager = #{
     id => notifications_manager_proc,
     start => {notifications_manager, start_link, []},
     restart => permanent,
@@ -35,15 +35,15 @@ init([]) ->
     type => worker,
     modules => [notifications_manager]},
 
-  WorkerSup = #{
+  WorkerManager = #{
     id => workers_mgr_proc,
-    start => {workers_mgr, start_link, [{worker, start_link, []}]},
+    start => {workers_manager, start_link, [{worker, start_link, []}]},
     restart => permanent,
     shutdown => 5000,
     type => supervisor,
-    modules => [workers_mgr]},
+    modules => [workers_manager]},
 
-  {ok, {#{strategy => one_for_one, intensity => 5, period => 10}, [Manager, WorkerSup]}}.
+  {ok, {#{strategy => one_for_one, intensity => 5, period => 10}, [NotificationsManager, WorkerManager]}}.
 
 stop() ->
   supervisor:terminate_child(?MODULE, notifications_manager_proc),

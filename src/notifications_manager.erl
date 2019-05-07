@@ -41,9 +41,6 @@ init([]) ->
   register(notifications_manager, self()),
   {ok, #mgrState{sub = #{}, con = #{}}}.
 
-handle_call({push, _Notification = #notification{}}, _From, State) ->
-  {reply, <<"Binary data">>, State};
-
 handle_call({new_connection, Pid, Subscriptions}, _From, State) ->
   {ok, Worker, NewState} = add_client(Pid, Subscriptions, State),
   {reply, {ok, Worker}, NewState};
@@ -78,7 +75,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 
 add_client(Connection, Keys, State = #mgrState{sub = Sub}) ->
-  {ok, Worker} = workers_mgr:spawn_worker(Connection),
+  {ok, Worker} = workers_manager:spawn_worker(Connection),
   KeysSet = lists:foldl(
     fun(E, Acc) -> sets:add_element(E, Acc) end, sets:new(), Keys),
   {ok, Worker, State#mgrState{sub = Sub#{Worker => KeysSet}}}.

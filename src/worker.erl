@@ -15,7 +15,7 @@ terminate(Worker) ->
   gen_server:call(Worker, terminate).
 
 deliver_notification(Payload, Meta, Worker) ->
-  gen_server:cast(Worker, #notification{source = self(), payload = Payload, meta = Meta}).
+  gen_server:cast(Worker, #event{source = self(), payload = Payload, meta = Meta}).
 
 subscribe(Subscription, Worker) ->
   subscribe(Subscription, fail, Worker).
@@ -51,7 +51,7 @@ handle_call(_, _From, State) ->
   {reply, unknown_msg, State}.
 
 %%TODO: Filtering
-handle_cast(#notification{} = Notification, #workerState{con = Con} = State) ->
+handle_cast(#event{} = Notification, #workerState{con = Con} = State) ->
   Con ! {deliver, Notification},
   {noreply, State};
 

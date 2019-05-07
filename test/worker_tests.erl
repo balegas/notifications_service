@@ -3,9 +3,6 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("../include/records.hrl").
 
-%% These tests start the necessary processes for the gen_server to work.
-%% Alternatively should mock dependencies.
-
 -define(NOTIF_MGR, notifications_manager).
 -define(WORKER_MGR, workers_mgr).
 

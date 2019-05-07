@@ -38,16 +38,16 @@ websocket_handle({text, Msg}, State) ->
   {reply, {text, <<"Echo Msg! ", Msg/binary>>}, State};
 
 websocket_handle(Msg, State) ->
-  ?LOG_INFO("Unexpected Message ~p", [Msg]),
+  ?LOG_INFO("Unexpected Message ~p ~p", [Msg, State]),
   {ok, State}.
 
 
-websocket_info({deliver, #notification{payload = Payload}}, State) ->
+websocket_info({deliver, #event{payload = Payload}}, State) ->
   {reply, {text, ?ENCODE_JSON(Payload)}, State};
 
 
 websocket_info(Msg, State) ->
-  ?LOG_INFO("Unexpected Message ~p", [Msg]),
+  ?LOG_INFO("Unexpected Message ~p ~p", [Msg, State]),
   {ok, State}.
 
 %%TODO: Use Request Accept headers to select appropriate serialization engine

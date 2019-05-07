@@ -2,11 +2,12 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("../include/records.hrl").
 
+-define(NOTIF_MGR, notifications_manager).
+-define(WORKER_MGR, workers_manager).
+
+
 %% These tests start the necessary processes for the gen_server to work.
 %% Alternatively should mock dependencies.
-
--define(NOTIF_MGR, notifications_manager).
--define(WORKER_MGR, workers_mgr).
 
 init_test_() ->
   {"Tests Notifications Manager",
@@ -25,26 +26,26 @@ init_test_() ->
 
 start() ->
   test_utils:start_application(),
-  #{notifications_manager => whereis(notifications_manager), workers_mgr => whereis(workers_mgr)}.
+  #{?NOTIF_MGR => whereis(?NOTIF_MGR), ?WORKER_MGR => whereis(?WORKER_MGR)}.
 
 stop(_Pids) -> ok.
 
 is_init(Pids) ->
   [
-    ?_assert(is_process_alive(maps:get(notifications_manager, Pids))),
-    ?_assert(is_process_alive(maps:get(workers_mgr, Pids))),
-    ?_assertEqual(maps:get(notifications_manager, Pids), whereis(?NOTIF_MGR)),
-    ?_assertEqual(maps:get(workers_mgr, Pids), whereis(?WORKER_MGR))
+    ?_assert(is_process_alive(maps:get(?NOTIF_MGR, Pids))),
+    ?_assert(is_process_alive(maps:get(?WORKER_MGR, Pids))),
+    ?_assertEqual(maps:get(?NOTIF_MGR, Pids), whereis(?NOTIF_MGR)),
+    ?_assertEqual(maps:get(?WORKER_MGR, Pids), whereis(?WORKER_MGR))
   ].
 
 register_connection_success(_Pid) ->
-  {ok, Worker} = notifications_manager:add_client(spawn(fun() -> timer:sleep(1000000) end), ["fakeKey"]),
-  #mgrState{sub = Sub} = sys:get_state(notifications_manager),
+  {ok, Worker} = ?NOTIF_MGR:add_client(spawn(fun() -> timer:sleep(1000000) end), ["fakeKey"]),
+  #mgrState{sub = Sub} = sys:get_state(?NOTIF_MGR),
   MySubs = maps:get(Worker, Sub),
   [?_assert(sets:is_element("fakeKey", MySubs))].
 
 delete_connection_success(_Pid) ->
-  {ok, Worker} = notifications_manager:add_client(spawn(fun() -> timer:sleep(1000000) end), ["fakeKey"]),
-  ok = notifications_manager:delete_client(Worker),
-  #mgrState{sub = Sub} = sys:get_state(notifications_manager),
+  {ok, Worker} = ?NOTIF_MGR:add_client(spawn(fun() -> timer:sleep(1000000) end), ["fakeKey"]),
+  ok = ?NOTIF_MGR:delete_client(Worker),
+  #mgrState{sub = Sub} = sys:get_state(?NOTIF_MGR),
   [?_assertEqual(error, maps:find(Worker, Sub))].
