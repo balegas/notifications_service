@@ -1,7 +1,7 @@
 -record(subscription, {key, props}).
--record(event, {source, payload, meta}).
+-record(updateEvent, {source, payload, meta}).
 
--record(mgrState, {sub, con}).
+-record(mgrState, {sub, con, router}).
 -record(workerState, {sub, con}).
 
 -record(fanoutState, {event_source, endpoints}).

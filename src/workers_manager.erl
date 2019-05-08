@@ -10,6 +10,7 @@
 
 -behaviour(supervisor).
 -include_lib("kernel/include/logger.hrl").
+-include_lib("amqp_client/include/amqp_client.hrl").
 
 %% API
 -export([start_link/1, terminate/2, spawn_worker/1]).
@@ -40,5 +41,5 @@ init({Module, Function, Args}) ->
   }
   }.
 
-spawn_worker(Connection) ->
-  supervisor:start_child(?MODULE, [Connection]).
+spawn_worker(Channel) ->
+  supervisor:start_child(?MODULE, [Channel]).

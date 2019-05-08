@@ -4,7 +4,7 @@
 -include_lib("../include/records.hrl").
 
 %% API
--export([start_link/0, stop/0, add_client/2, delete_client/1, push_notification/1]).
+-export([start_link/1, stop/0, add_client/2, delete_client/1, push_notification/1]).
 %% Server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
   terminate/2, code_change/3]).
@@ -13,8 +13,8 @@
 %% API
 %%====================================================================
 
-start_link() ->
-  gen_server:start_link(?MODULE, [], []).
+start_link(Router) ->
+  gen_server:start_link(?MODULE, [Router], []).
 
 stop() ->
   gen_server:call(?MODULE, terminate).
@@ -36,10 +36,10 @@ push_notification(_) -> ok.
 %% Callbacks
 %%====================================================================
 
-init([]) ->
+init([Router]) ->
   ?LOG_INFO("Notifications manager init"),
   register(notifications_manager, self()),
-  {ok, #mgrState{sub = #{}, con = #{}}}.
+  {ok, #mgrState{sub = #{}, con = #{}, router = Router}}.
 
 handle_call({new_connection, Pid, Subscriptions}, _From, State) ->
   {ok, Worker, NewState} = add_client(Pid, Subscriptions, State),
@@ -74,10 +74,12 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal functions
 %%====================================================================
 
-add_client(Connection, Keys, State = #mgrState{sub = Sub}) ->
+add_client(Connection, Keys, State = #mgrState{sub = Sub, router = Router}) ->
   {ok, Worker} = workers_manager:spawn_worker(Connection),
+  router:add_endpoint(Worker, Router),
   KeysSet = lists:foldl(
     fun(E, Acc) -> sets:add_element(E, Acc) end, sets:new(), Keys),
+
   {ok, Worker, State#mgrState{sub = Sub#{Worker => KeysSet}}}.
 
 delete_client(Worker, #mgrState{sub = Sub} = State) ->

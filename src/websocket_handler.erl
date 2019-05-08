@@ -15,9 +15,9 @@
 %% API
 %%====================================================================
 
-init(Req, Opts) ->
-  ?LOG_INFO("Websocket upgrade init Req: ~p Opts: ~p", [Req, Opts]),
-  {cowboy_websocket, Req, Opts}.
+init(Req, State) ->
+  ?LOG_INFO("Websocket upgrade init Req: ~p Opts: ~p", [Req, State]),
+  {cowboy_websocket, Req, State, #{idle_timeout => 3600000}}.
 
 terminate(_, _, _) ->
   ?LOG_INFO("Websocket connection terminated"),
@@ -42,7 +42,7 @@ websocket_handle(Msg, State) ->
   {ok, State}.
 
 
-websocket_info({deliver, #event{payload = Payload}}, State) ->
+websocket_info({deliver, #updateEvent{payload = Payload}}, State) ->
   {reply, {text, ?ENCODE_JSON(Payload)}, State};
 
 

@@ -15,7 +15,7 @@ terminate(Worker) ->
   gen_server:call(Worker, terminate).
 
 deliver_notification(Payload, Meta, Worker) ->
-  gen_server:cast(Worker, #event{source = self(), payload = Payload, meta = Meta}).
+  gen_server:cast(Worker, #updateEvent{source = self(), payload = Payload, meta = Meta}).
 
 subscribe(Subscription, Worker) ->
   subscribe(Subscription, fail, Worker).
@@ -26,6 +26,7 @@ subscribe(Subscription, Replace, Worker) ->
 init(Connection) ->
   link(Connection),
   process_flag(trap_exit, true),
+  ?LOG_INFO("Init"),
   {ok, #workerState{con = Connection, sub = #{}}}.
 
 handle_call({#subscription{key = Key, props = Props}, Replace}, _From, #workerState{sub = Sub} = State) ->
@@ -47,11 +48,12 @@ handle_call({#subscription{key = Key, props = Props}, Replace}, _From, #workerSt
 handle_call(terminate, _From, State) ->
   {stop, normal, ok, State};
 
-handle_call(_, _From, State) ->
+handle_call(Msg, _From, State) ->
+  ?LOG_INFO("Unexpected message: ~p ~p", [Msg, State]),
   {reply, unknown_msg, State}.
 
 %%TODO: Filtering
-handle_cast(#event{} = Notification, #workerState{con = Con} = State) ->
+handle_cast(#updateEvent{} = Notification, #workerState{con = Con} = State) ->
   Con ! {deliver, Notification},
   {noreply, State};
 
